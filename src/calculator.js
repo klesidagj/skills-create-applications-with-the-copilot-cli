@@ -61,6 +61,36 @@ function div(a, b) {
   return Number(a) / nb;
 }
 
+// New functions requested in latest issue
+function modulo(a, b) {
+  const nb = Number(b);
+  if (nb === 0) {
+    const err = new Error('modulo by zero');
+    err.code = 'MOD_BY_ZERO';
+    throw err;
+  }
+  return Number(a) % nb;
+}
+
+function power(base, exponent) {
+  return Math.pow(Number(base), Number(exponent));
+}
+
+function squareRoot(n) {
+  const val = Number(n);
+  if (Number.isNaN(val)) {
+    const err = new Error('invalid number');
+    err.code = 'INVALID_NUMBER';
+    throw err;
+  }
+  if (val < 0) {
+    const err = new Error('square root of negative number');
+    err.code = 'NEG_SQRT';
+    throw err;
+  }
+  return Math.sqrt(val);
+}
+
 function main(argv) {
   if (argv.includes('--help') || argv.includes('-h')) {
     printHelp();
@@ -69,21 +99,51 @@ function main(argv) {
 
   const [op, aRaw, bRaw] = argv;
 
-  if (!op || !aRaw || !bRaw) {
-    console.error('Error: operation and two numeric arguments are required.');
+  if (!op) {
+    console.error('Error: operation is required.');
     printHelp();
     process.exit(1);
   }
 
-  const a = toNumber(aRaw);
-  const b = toNumber(bRaw);
-
-  if (Number.isNaN(a) || Number.isNaN(b)) {
-    console.error('Error: both arguments must be valid numbers.');
-    process.exit(1);
-  }
-
   try {
+    if (op === 'sqrt') {
+      if (!aRaw) {
+        console.error('Error: sqrt requires one numeric argument.');
+        printHelp();
+        process.exit(1);
+      }
+      const a = toNumber(aRaw);
+      if (Number.isNaN(a)) {
+        console.error('Error: argument must be a valid number.');
+        process.exit(1);
+      }
+      try {
+        console.log(squareRoot(a));
+      } catch (e) {
+        if (e && e.code === 'NEG_SQRT') {
+          console.error('Error: square root of negative number is not allowed.');
+          process.exit(2);
+        }
+        throw e;
+      }
+      return;
+    }
+
+    // binary operations: require two args
+    if (!aRaw || !bRaw) {
+      console.error('Error: operation requires two numeric arguments.');
+      printHelp();
+      process.exit(1);
+    }
+
+    const a = toNumber(aRaw);
+    const b = toNumber(bRaw);
+
+    if (Number.isNaN(a) || Number.isNaN(b)) {
+      console.error('Error: both arguments must be valid numbers.');
+      process.exit(1);
+    }
+
     switch (op) {
       case 'add':
         console.log(add(a, b));
@@ -105,6 +165,20 @@ function main(argv) {
           throw e;
         }
         break;
+      case 'mod':
+        try {
+          console.log(modulo(a, b));
+        } catch (e) {
+          if (e && e.code === 'MOD_BY_ZERO') {
+            console.error('Error: modulo by zero is not allowed.');
+            process.exit(2);
+          }
+          throw e;
+        }
+        break;
+      case 'pow':
+        console.log(power(a, b));
+        break;
       default:
         console.error(`Error: unsupported operation "${op}".`);
         printHelp();
@@ -121,4 +195,4 @@ if (require.main === module) {
   main(process.argv.slice(2));
 }
 
-module.exports = { main, add, sub, mul, div };
+module.exports = { main, add, sub, mul, div, modulo, power, squareRoot };
