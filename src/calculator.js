@@ -38,6 +38,29 @@ function toNumber(x) {
   return Number.isFinite(n) ? n : NaN;
 }
 
+// Pure functions exported for testing and reuse
+function add(a, b) {
+  return Number(a) + Number(b);
+}
+
+function sub(a, b) {
+  return Number(a) - Number(b);
+}
+
+function mul(a, b) {
+  return Number(a) * Number(b);
+}
+
+function div(a, b) {
+  const nb = Number(b);
+  if (nb === 0) {
+    const err = new Error('division by zero');
+    err.code = 'DIV_BY_ZERO';
+    throw err;
+  }
+  return Number(a) / nb;
+}
+
 function main(argv) {
   if (argv.includes('--help') || argv.includes('-h')) {
     printHelp();
@@ -60,27 +83,36 @@ function main(argv) {
     process.exit(1);
   }
 
-  switch (op) {
-    case 'add':
-      console.log(a + b);
-      break;
-    case 'sub':
-      console.log(a - b);
-      break;
-    case 'mul':
-      console.log(a * b);
-      break;
-    case 'div':
-      if (b === 0) {
-        console.error('Error: division by zero is not allowed.');
-        process.exit(2);
-      }
-      console.log(a / b);
-      break;
-    default:
-      console.error(`Error: unsupported operation "${op}".`);
-      printHelp();
-      process.exit(1);
+  try {
+    switch (op) {
+      case 'add':
+        console.log(add(a, b));
+        break;
+      case 'sub':
+        console.log(sub(a, b));
+        break;
+      case 'mul':
+        console.log(mul(a, b));
+        break;
+      case 'div':
+        try {
+          console.log(div(a, b));
+        } catch (e) {
+          if (e && e.code === 'DIV_BY_ZERO') {
+            console.error('Error: division by zero is not allowed.');
+            process.exit(2);
+          }
+          throw e;
+        }
+        break;
+      default:
+        console.error(`Error: unsupported operation "${op}".`);
+        printHelp();
+        process.exit(1);
+    }
+  } catch (err) {
+    console.error('Error:', err.message || err);
+    process.exit(1);
   }
 }
 
@@ -89,4 +121,4 @@ if (require.main === module) {
   main(process.argv.slice(2));
 }
 
-module.exports = { main };
+module.exports = { main, add, sub, mul, div };
